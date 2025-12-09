@@ -112,17 +112,7 @@ app.post("/api/auth/login", async (req, res) => {
 // Get all books
 app.get("/api/books", async (req, res) => {
   try {
-    const { search } = req.query;
-    let query = "SELECT * FROM books";
-    let params = [];
-    
-    if (search) {
-      query += " WHERE LOWER(title) LIKE LOWER($1) OR LOWER(author) LIKE LOWER($1)";
-      params.push(`%${search}%`);
-    }
-    
-    query += " ORDER BY title";
-    const result = await pool.query(query, params);
+    const result = await pool.query("SELECT * FROM books ORDER BY title");
     res.json(result.rows);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch books" });
@@ -301,11 +291,34 @@ app.get("/test-db", async (req, res) => {
   }
 });
 
+// 404 handler - MUST BE LAST
+app.use((req, res) => {
+  res.status(404).json({ 
+    error: "Route not found",
+    requestedUrl: req.url,
+    method: req.method,
+    availableRoutes: [
+      "GET /",
+      "GET /test-db",
+      "POST /api/auth/register",
+      "POST /api/auth/login", 
+      "GET /api/books",
+      "POST /api/books",
+      "PUT /api/books/:id",
+      "DELETE /api/books/:id",
+      "POST /api/borrow/borrow",
+      "POST /api/borrow/return",
+      "GET /api/borrow/user/:user_id"
+    ]
+  });
+});
+
 // ========== START SERVER ==========
 const PORT = process.env.PORT || 3004;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📚 Endpoints:`);
+  console.log(`📚 Available routes:`);
+  console.log(`   GET  /`);
   console.log(`   GET  /test-db`);
   console.log(`   POST /api/auth/register`);
   console.log(`   POST /api/auth/login`);
@@ -314,4 +327,3 @@ app.listen(PORT, () => {
   console.log(`   PUT  /api/books/:id`);
   console.log(`   DELETE /api/books/:id`);
 });
-
